@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoramento</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ Sistema de Monitoramento com Distribuições de Probabilidade</h1>
+        
+        <div class="dashboard">
+            <!-- Monitoramento do Browser (Distribuição Binomial) -->
+            <div class="card">
+                <h2><span class="emoji">📊</span>Análise Binomial - Testes de Performance</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Número de Testes</label>
+                        <input type="number" id="numTests" value="20" min="10" max="100" step="1">
+                    </div>
+                    <div class="control-group">
+                        <label>Limite de Tempo (ms)</label>
+                        <input type="number" id="timeLimit" value="150" min="50" max="500" step="10">
+                    </div>
+                    <div class="control-group">
+                        <label>Nível de Dificuldade</label>
+                        <select id="difficultyLevel">
+                            <option value="easy">Fácil (PC potente)</option>
+                            <option value="medium" selected>Médio (balanceado)</option>
+                            <option value="hard">Difícil (stress test)</option>
+                        </select>
+                    </div>
+                    <button onclick="runPerformanceTests()" id="testButton">🚀 Executar Testes</button>
+                </div>
+                
+                <div class="real-time-data">
+                    <div class="data-item good" id="successTests">
+                        <div class="value" id="successValue">0</div>
+                        <div class="label">Testes Aprovados</div>
+                    </div>
+                    <div class="data-item critical" id="failedTests">
+                        <div class="value" id="failedValue">0</div>
+                        <div class="label">Testes Reprovados</div>
+                    </div>
+                    <div class="data-item" id="successRate">
+                        <div class="value" id="rateValue">0%</div>
+                        <div class="label">Taxa de Sucesso</div>
+                    </div>
+                </div>
+                
+                <div class="probability-display" id="binomialCalc">
+                    <strong>Cálculo Binomial:</strong><br>
+                    P(X = k) = C(n,k) × p^k × (1-p)^(n-k)<br>
+                    <span id="binomialResult">Execute os testes para ver o cálculo</span>
+                </div>
+            </div>
+            
+            <!-- Monitoramento de Eventos (Distribuição de Poisson) -->
+            <div class="card">
+                <h2><span class="emoji">⚡</span>Análise Poisson - Eventos do Sistema</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Tipo de Evento</label>
+                        <select id="eventType">
+                            <option value="mouse">Movimentos do Mouse</option>
+                            <option value="keyboard">Teclas Pressionadas</option>
+                            <option value="scroll">Eventos de Scroll</option>
+                            <option value="resize">Redimensionamentos</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Intervalo (segundos)</label>
+                        <input type="number" id="interval" value="10" min="5" max="60" step="1">
+                    </div>
+                    <button onclick="startEventMonitoring()" id="monitorButton">📈 Iniciar Monitoramento</button>
+                </div>
+                
+                <div class="real-time-data">
+                    <div class="data-item good" id="currentEvents">
+                        <div class="value" id="currentValue">0</div>
+                        <div class="label">Eventos Atuais</div>
+                    </div>
+                    <div class="data-item" id="avgEvents">
+                        <div class="value" id="avgValue">0</div>
+                        <div class="label">Média (λ)</div>
+                    </div>
+                    <div class="data-item" id="totalIntervals">
+                        <div class="value" id="intervalValue">0</div>
+                        <div class="label">Intervalos</div>
+                    </div>
+                </div>
+                
+                <div class="probability-display" id="poissonCalc">
+                    <strong>Cálculo Poisson:</strong><br>
+                    P(X = k) = (e^(-λ) × λ^k) / k!<br>
+                    <span id="poissonResult">Inicie o monitoramento para ver o cálculo</span>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="eventChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sistema - Informações do Browser -->
+        <div class="card full-width">
+            <h2><span class="emoji">🌐</span>Dados Reais do Sistema</h2>
+            
+            <div class="real-time-data">
+                <div class="data-item good" id="memoryUsage">
+                    <div class="value" id="memoryValue">
+                        <span class="status-indicator status-online"></span>
+                        Carregando...
+                    </div>
+                    <div class="label">Uso de Memória</div>
+                </div>
+                <div class="data-item good" id="connectionSpeed">
+                    <div class="value" id="speedValue">
+                        <span class="status-indicator status-online"></span>
+                        Testando...
+                    </div>
+                    <div class="label">Latência de Rede</div>
+                </div>
+                <div class="data-item good" id="screenInfo">
+                    <div class="value" id="screenValue">
+                        <span class="status-indicator status-online"></span>
+                        ${window.screen.width}x${window.screen.height}
+                    </div>
+                    <div class="label">Resolução da Tela</div>
+                </div>
+                <div class="data-item good" id="browserInfo">
+                    <div class="value" id="browserValue">
+                        <span class="status-indicator status-online"></span>
+                        ${navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Outro'}
+                    </div>
+                    <div class="label">Navegador</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Log de Eventos -->
+        <div class="card full-width">
+            <h2><span class="emoji">📝</span>Log de Eventos - Análise Probabilística</h2>
+            <div class="log" id="eventLog">
+                <div class="log-entry system">[SISTEMA] Sistema de monitoramento iniciado</div>
+                <div class="log-entry system">[INFO] Aguardando execução de testes...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/index.js"></script>
+</body>
+</html>
