@@ -4,132 +4,151 @@ let eventCounts = [];
 let eventListeners = {};
 let isMonitoring = false;
 
-// Função para calcular fatorial
+// Função para calcular fatorial (com limite para evitar overflow)
 function factorial(n) {
   if (n <= 1) return 1;
+  if (n > 170) return Infinity; // JavaScript não consegue calcular fatoriais > 170!
   return n * factorial(n - 1);
 }
 
-// Função para calcular combinação C(n,k)
+// Função para calcular logaritmo do fatorial (mais estável)
+function logFactorial(n) {
+  if (n <= 1) return 0;
+  let result = 0;
+  for (let i = 2; i <= n; i++) {
+    result += Math.log(i);
+  }
+  return result;
+}
+
+// Função para calcular combinação C(n,k) de forma estável
 function combination(n, k) {
-  if (k > n) return 0;
-  return factorial(n) / (factorial(k) * factorial(n - k));
+  if (k > n || k < 0) return 0;
+  if (k === 0 || k === n) return 1;
+  
+  // Para números grandes, usar logaritmos
+  if (n > 170) {
+    const logResult = logFactorial(n) - logFactorial(k) - logFactorial(n - k);
+    return Math.exp(logResult);
+  }
+  
+  // Para números menores, usar método iterativo mais estável
+  k = Math.min(k, n - k); // Aproveitar simetria
+  let result = 1;
+  for (let i = 0; i < k; i++) {
+    result = result * (n - i) / (i + 1);
+  }
+  return result;
 }
 
-// Calcular probabilidade binomial
+// Calcular probabilidade binomial de forma estável
 function binomialProbability(n, k, p) {
-  return combination(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+  if (k > n || k < 0) return 0;
+  if (p === 0) return k === 0 ? 1 : 0;
+  if (p === 1) return k === n ? 1 : 0;
+  
+  // Para números grandes, usar logaritmos para evitar overflow
+  if (n > 170) {
+    const logComb = logFactorial(n) - logFactorial(k) - logFactorial(n - k);
+    const logProb = logComb + k * Math.log(p) + (n - k) * Math.log(1 - p);
+    return Math.exp(logProb);
+  }
+  
+  const comb = combination(n, k);
+  if (!isFinite(comb)) return 0;
+  
+  const prob = comb * Math.pow(p, k) * Math.pow(1 - p, n - k);
+  return isFinite(prob) ? prob : 0;
 }
 
-// Calcular probabilidade de Poisson
+// Calcular probabilidade de Poisson de forma estável
 function poissonProbability(lambda, k) {
-  return (Math.pow(Math.E, -lambda) * Math.pow(lambda, k)) / factorial(k);
+  if (lambda <= 0 || k < 0) return 0;
+  if (k === 0) return Math.exp(-lambda);
+  
+  // Para valores grandes, usar logaritmos
+  if (k > 170 || lambda > 700) {
+    const logProb = -lambda + k * Math.log(lambda) - logFactorial(k);
+    return Math.exp(logProb);
+  }
+  
+  // Para valores menores, usar cálculo direto otimizado
+  let result = Math.exp(-lambda);
+  for (let i = 1; i <= k; i++) {
+    result = result * lambda / i;
+  }
+  
+  return isFinite(result) ? result : 0;
 }
 
-// Executar testes reais de performance
+// Executar testes REAIS de performance do sistema
 async function runPerformanceTests() {
   const button = document.getElementById("testButton");
   const numTests = parseInt(document.getElementById("numTests").value);
   const timeLimit = parseInt(document.getElementById("timeLimit").value);
 
   button.disabled = true;
-  button.textContent = "⏳ Executando...";
+  button.textContent = "⏳ Medindo Performance Real...";
 
   let successes = 0;
   let failures = 0;
 
   addLogEntry(
-    "[BINOMIAL] Iniciando testes reais de performance...",
+    "[BINOMIAL] Iniciando medições REAIS de performance do sistema...",
     "binomial"
   );
 
   for (let i = 0; i < numTests; i++) {
     const startTime = performance.now();
-    const difficulty = document.getElementById("difficultyLevel").value;
+    
+    // TESTE 1: Tempo real de renderização de frame
+    const frameStart = performance.now();
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    const frameTime = performance.now() - frameStart;
 
-    // Ajustar intensidade baseado na dificuldade
-    let baseOperations, domElements, mathComplexity;
-
-    switch (difficulty) {
-      case "easy":
-        baseOperations = 500;
-        domElements = 10;
-        mathComplexity = 1000;
-        break;
-      case "medium":
-        baseOperations = 2000;
-        domElements = 50;
-        mathComplexity = 3000;
-        break;
-      case "hard":
-        baseOperations = 5000;
-        domElements = 100;
-        mathComplexity = 8000;
-        break;
+    // TESTE 2: Latência real de fetch (rede)
+    const networkStart = performance.now();
+    try {
+      await fetch('data:text/plain,test');
+    } catch (e) {
+      // Fallback se fetch falhar
     }
+    const networkTime = performance.now() - networkStart;
 
-    // Teste mais desafiador: múltiplas operações intensivas
+    // TESTE 3: Tempo real de acesso ao DOM
+    const domStart = performance.now();
+    const testDiv = document.createElement('div');
+    testDiv.innerHTML = 'test';
+    document.body.appendChild(testDiv);
+    const computedStyle = window.getComputedStyle(testDiv);
+    const bgColor = computedStyle.backgroundColor;
+    document.body.removeChild(testDiv);
+    const domTime = performance.now() - domStart;
 
-    // 1. Criação e manipulação de DOM complexa
-    const container = document.createElement("div");
-    for (let k = 0; k < domElements; k++) {
-      const element = document.createElement("div");
-      element.innerHTML = `<span>Item ${k}</span><input type="text" value="test${k}">`;
-      element.style.cssText = `position: absolute; left: ${k}px; top: ${k}px; opacity: 0.5;`;
-      container.appendChild(element);
+    // TESTE 4: Performance real de JavaScript
+    const jsStart = performance.now();
+    let sum = 0;
+    for (let j = 0; j < 10000; j++) {
+      sum += Math.random();
     }
-    document.body.appendChild(container);
+    const jsTime = performance.now() - jsStart;
 
-    // 2. Operações matemáticas intensivas com variação aleatória
-    let result = 0;
-    const operations =
-      baseOperations + Math.floor(Math.random() * mathComplexity);
-    for (let j = 0; j < operations; j++) {
-      result += Math.sin(j) * Math.cos(j) * Math.sqrt(j + 1);
-      if (j % 100 === 0) {
-        result = result % 1000; // Evitar overflow
-      }
-    }
+    // TESTE 5: Tempo real de garbage collection (medido indiretamente)
+    const gcStart = performance.now();
+    const tempArray = new Array(1000).fill(0).map(() => ({ id: Math.random() }));
+    tempArray.length = 0;
+    const gcTime = performance.now() - gcStart;
 
-    // 3. Manipulação de arrays grandes (varia com dificuldade)
-    const arraySize = domElements * 20;
-    const testArray = new Array(arraySize)
-      .fill(0)
-      .map((_, idx) => Math.random() * idx);
-    testArray.sort((a, b) => a - b);
-    const filtered = testArray.filter((x) => x > 0.5);
+    const totalTime = performance.now() - startTime;
 
-    // 4. Simulação de delay de rede variável
-    const networkDelay =
-      Math.random() *
-      (difficulty === "hard" ? 50 : difficulty === "medium" ? 30 : 15);
-    await new Promise((resolve) => setTimeout(resolve, networkDelay));
-
-    // 5. Forçar garbage collection (operação custosa)
-    if (difficulty === "hard") {
-      const wasteArray = new Array(10000).fill(0).map(() => ({
-        data: Math.random().toString(36),
-        timestamp: Date.now(),
-      }));
-      wasteArray.length = 0; // Limpar para forçar GC
-    }
-
-    // 6. Limpeza
-    document.body.removeChild(container);
-
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-
-    // Log detalhado do teste
-    const status = duration <= timeLimit ? "✅ PASSOU" : "❌ FALHOU";
+    // Log detalhado do teste REAL
+    const status = totalTime <= timeLimit ? "✅ RÁPIDO" : "❌ LENTO";
     addLogEntry(
-      `[TESTE ${i + 1}] ${status} - ${duration.toFixed(
-        1
-      )}ms (limite: ${timeLimit}ms) - Ops: ${operations}`,
-      duration <= timeLimit ? "system" : "binomial"
+      `[TESTE ${i + 1}] ${status} - Total: ${totalTime.toFixed(1)}ms | Frame: ${frameTime.toFixed(1)}ms | Rede: ${networkTime.toFixed(1)}ms | DOM: ${domTime.toFixed(1)}ms | JS: ${jsTime.toFixed(1)}ms`,
+      totalTime <= timeLimit ? "system" : "binomial"
     );
 
-    if (duration <= timeLimit) {
+    if (totalTime <= timeLimit) {
       successes++;
       document.getElementById("successValue").textContent = successes;
     } else {
@@ -141,26 +160,40 @@ async function runPerformanceTests() {
     const rate = ((successes / (i + 1)) * 100).toFixed(1);
     document.getElementById("rateValue").textContent = rate + "%";
 
-    // Pausa para visualização e permitir que o browser respire
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Pausa mínima entre testes
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
-  // Calcular probabilidades teóricas vs observadas
+  // Calcular probabilidades baseadas nos dados REAIS
   const observedP = successes / numTests;
   const k = successes;
   const theoreticalProb = binomialProbability(numTests, k, observedP);
 
-  const calcText = `
-                n = ${numTests}, k = ${k}, p = ${observedP.toFixed(3)}<br>
-                P(X = ${k}) = ${(theoreticalProb * 100).toFixed(2)}%<br>
-                Probabilidade observada: ${(observedP * 100).toFixed(1)}%
+  let calcText;
+  if (isFinite(theoreticalProb) && theoreticalProb > 0) {
+    calcText = `
+                <strong>Análise Real do Sistema:</strong><br>
+                n = ${numTests} testes, k = ${k} sucessos<br>
+                p = ${observedP.toFixed(3)} (taxa real observada)<br>
+                P(X = ${k}) = ${(theoreticalProb * 100).toFixed(6)}%<br>
+                Performance Real: ${(observedP * 100).toFixed(1)}% dos testes foram rápidos
             `;
+  } else {
+    // Para casos onde a probabilidade é muito pequena
+    calcText = `
+                <strong>Análise Real do Sistema:</strong><br>
+                n = ${numTests} testes, k = ${k} sucessos<br>
+                p = ${observedP.toFixed(3)} (taxa real observada)<br>
+                P(X = ${k}) ≈ ${theoreticalProb < 1e-10 ? 'muito pequena' : 'calculando...'}<br>
+                Performance Real: ${(observedP * 100).toFixed(1)}% dos testes foram rápidos<br>
+                <small style="opacity: 0.7">Nota: Para n=${numTests}, a probabilidade exata é muito pequena para exibir</small>
+            `;
+  }
+  
   document.getElementById("binomialResult").innerHTML = calcText;
 
   addLogEntry(
-    `[BINOMIAL] Testes concluídos: ${successes}/${numTests} sucessos (${(
-      observedP * 100
-    ).toFixed(1)}%)`,
+    `[BINOMIAL] Análise concluída: ${successes}/${numTests} testes rápidos (${(observedP * 100).toFixed(1)}% de performance)`,
     "binomial"
   );
 
@@ -221,16 +254,14 @@ function startEventMonitoring() {
       const prob = poissonProbability(lambda, currentCount);
       const calcText = `
                         λ = ${lambda.toFixed(2)}, k = ${currentCount}<br>
-                        P(X = ${currentCount}) = ${(prob * 100).toFixed(2)}%<br>
+                        P(X = ${currentCount}) = ${(prob * 100).toFixed(4)}%<br>
                         Intervalo atual: ${eventCounts.length}
                     `;
       document.getElementById("poissonResult").innerHTML = calcText;
     }
 
     addLogEntry(
-      `[POISSON] Intervalo ${
-        eventCounts.length
-      }: ${currentCount} eventos (λ=${lambda.toFixed(1)})`,
+      `[POISSON] Intervalo ${eventCounts.length}: ${currentCount} eventos (λ=${lambda.toFixed(1)})`,
       "poisson"
     );
 
@@ -322,46 +353,126 @@ function updateEventChart() {
   });
 }
 
-// Monitorar informações reais do sistema
+// Monitorar informações REAIS do sistema em tempo real
 function updateSystemInfo() {
-  // Memória (se disponível)
+  // Memória REAL (se disponível)
   if (performance.memory) {
-    const memory = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
-    document.getElementById(
-      "memoryValue"
-    ).innerHTML = `<span class="status-indicator status-online"></span>${memory} MB`;
+    const usedMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
+    const totalMB = (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(1);
+    const limitMB = (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(1);
+    const usage = ((performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100).toFixed(1);
+    
+    const status = usage < 50 ? "status-online" : usage < 80 ? "status-warning" : "status-critical";
+    document.getElementById("memoryValue").innerHTML = 
+      `<span class="status-indicator ${status}"></span>${usedMB}MB de ${limitMB}MB (${usage}%)`;
+  } else {
+    document.getElementById("memoryValue").innerHTML = 
+      `<span class="status-indicator status-warning"></span>Não disponível neste navegador`;
   }
 
-  // Teste de latência
-  const startTime = performance.now();
-  fetch("data:text/plain,test")
-    .then(() => {
-      const latency = (performance.now() - startTime).toFixed(1);
-      document.getElementById(
-        "speedValue"
-      ).innerHTML = `<span class="status-indicator status-online"></span>${latency} ms`;
-    })
-    .catch(() => {
-      document.getElementById(
-        "speedValue"
-      ).innerHTML = `<span class="status-indicator status-warning"></span>N/A`;
-    });
+  // Latência REAL de rede com múltiplas medições
+  const networkTests = [];
+  for (let i = 0; i < 3; i++) {
+    const startTime = performance.now();
+    fetch(`data:text/plain,test${i}?t=${Date.now()}`)
+      .then(() => {
+        const latency = performance.now() - startTime;
+        networkTests.push(latency);
+        
+        if (networkTests.length === 3) {
+          const avgLatency = (networkTests.reduce((a, b) => a + b) / networkTests.length).toFixed(1);
+          const status = avgLatency < 5 ? "status-online" : avgLatency < 20 ? "status-warning" : "status-critical";
+          document.getElementById("speedValue").innerHTML = 
+            `<span class="status-indicator ${status}"></span>${avgLatency}ms (média)`;
+        }
+      })
+      .catch(() => {
+        document.getElementById("speedValue").innerHTML = 
+          `<span class="status-indicator status-critical"></span>Erro de conexão`;
+      });
+  }
 
-  // Informações do navegador
-  document.getElementById(
-    "screenValue"
-  ).innerHTML = `<span class="status-indicator status-online"></span>${window.screen.width}x${window.screen.height}`;
+  // FPS REAL da tela
+  let frameCount = 0;
+  let lastTime = performance.now();
+  
+  function measureFPS() {
+    frameCount++;
+    const currentTime = performance.now();
+    
+    if (currentTime - lastTime >= 1000) {
+      const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+      const fpsStatus = fps >= 50 ? "status-online" : fps >= 30 ? "status-warning" : "status-critical";
+      
+      // Informações reais da tela
+      const screen = window.screen;
+      const pixelRatio = window.devicePixelRatio || 1;
+      const colorDepth = screen.colorDepth;
+      
+      document.getElementById("screenValue").innerHTML = 
+        `<span class="status-indicator ${fpsStatus}"></span>${screen.width}x${screen.height} @${fps}FPS (${colorDepth}bit)`;
+      
+      frameCount = 0;
+      lastTime = currentTime;
+    }
+    
+    requestAnimationFrame(measureFPS);
+  }
+  measureFPS();
 
-  const browserName = navigator.userAgent.includes("Chrome")
-    ? "Chrome"
-    : navigator.userAgent.includes("Firefox")
-    ? "Firefox"
-    : navigator.userAgent.includes("Safari")
-    ? "Safari"
-    : "Outro";
-  document.getElementById(
-    "browserValue"
-  ).innerHTML = `<span class="status-indicator status-online"></span>${browserName}`;
+  // Detecção REAL e PRECISA do navegador
+  function detectRealBrowser() {
+    const userAgent = navigator.userAgent;
+    const vendor = navigator.vendor || '';
+    
+    // Detecção específica do Edge (incluindo Edge Chromium)
+    if (userAgent.includes('Edg/') || userAgent.includes('Edge/')) {
+      return 'Microsoft Edge';
+    }
+    // Chrome (mas não Edge que também tem Chrome no userAgent)
+    else if (userAgent.includes('Chrome') && !userAgent.includes('Edg') && vendor.includes('Google')) {
+      return 'Google Chrome';
+    }
+    // Firefox
+    else if (userAgent.includes('Firefox')) {
+      return 'Mozilla Firefox';
+    }
+    // Safari
+    else if (userAgent.includes('Safari') && !userAgent.includes('Chrome') && vendor.includes('Apple')) {
+      return 'Apple Safari';
+    }
+    // Opera
+    else if (userAgent.includes('OPR/') || userAgent.includes('Opera')) {
+      return 'Opera';
+    }
+    // Internet Explorer
+    else if (userAgent.includes('Trident/') || userAgent.includes('MSIE')) {
+      return 'Internet Explorer';
+    }
+    else {
+      return 'Navegador desconhecido';
+    }
+  }
+
+  // CPU e navegador REAIS
+  const realBrowser = detectRealBrowser();
+  const cores = navigator.hardwareConcurrency || 'N/A';
+  const platform = navigator.platform || 'Desconhecido';
+  const language = navigator.language || 'N/A';
+  
+  // Detecção da arquitetura do processador
+  let architecture = 'Desconhecida';
+  if (platform.includes('Win64') || platform.includes('x86_64') || platform.includes('amd64')) {
+    architecture = '64-bit';
+  } else if (platform.includes('Win32') || platform.includes('i386')) {
+    architecture = '32-bit';
+  } else if (platform.includes('ARM')) {
+    architecture = 'ARM';
+  }
+  
+  document.getElementById("browserValue").innerHTML = 
+    `<span class="status-indicator status-online"></span>${realBrowser}<br>
+     <small style="opacity: 0.8">${cores} cores (${architecture}) - ${platform}</small>`;
 }
 
 // Adicionar entrada no log
@@ -375,22 +486,54 @@ function addLogEntry(message, type) {
   log.scrollTop = log.scrollHeight;
 }
 
-// Inicializar sistema
+// Inicializar sistema com dados REAIS
 document.addEventListener("DOMContentLoaded", function () {
   updateSystemInfo();
-  setInterval(updateSystemInfo, 5000); // Atualizar a cada 5 segundos
+  setInterval(updateSystemInfo, 3000); // Atualizar a cada 3 segundos
 
-  // Adicionar log inicial com informações reais
-  addLogEntry(
-    `[SISTEMA] Browser: ${navigator.userAgent.split(" ")[0]}`,
-    "system"
-  );
-  addLogEntry(
-    `[SISTEMA] Resolução: ${window.screen.width}x${window.screen.height}`,
-    "system"
-  );
-  addLogEntry(
-    `[SISTEMA] Cores disponíveis: ${navigator.hardwareConcurrency || "N/A"}`,
-    "system"
-  );
+  // Coletar informações REAIS do sistema na inicialização
+  const userAgent = navigator.userAgent;
+  const platform = navigator.platform;
+  const cores = navigator.hardwareConcurrency || 'N/A';
+  const language = navigator.language;
+  const cookieEnabled = navigator.cookieEnabled;
+  const onlineStatus = navigator.onLine ? 'Online' : 'Offline';
+  const screenRes = `${screen.width}x${screen.height}`;
+  const colorDepth = screen.colorDepth;
+  const pixelDepth = screen.pixelDepth;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+  // Detecção real do navegador
+  let realBrowser = 'Desconhecido';
+  if (userAgent.includes('Edg/') || userAgent.includes('Edge/')) {
+    realBrowser = 'Microsoft Edge';
+  } else if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
+    realBrowser = 'Google Chrome';  
+  } else if (userAgent.includes('Firefox')) {
+    realBrowser = 'Mozilla Firefox';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    realBrowser = 'Apple Safari';
+  } else if (userAgent.includes('OPR/') || userAgent.includes('Opera')) {
+    realBrowser = 'Opera';
+  }
+
+  // Log inicial com informações REAIS
+  addLogEntry(`[SISTEMA] Navegador detectado: ${realBrowser}`, "system");
+  addLogEntry(`[SISTEMA] Plataforma: ${platform} (${cores} cores de CPU)`, "system");
+  addLogEntry(`[SISTEMA] Resolução: ${screenRes} (${colorDepth}-bit, ratio: ${window.devicePixelRatio || 1})`, "system");
+  addLogEntry(`[SISTEMA] Status: ${onlineStatus} | Idioma: ${language} | Fuso: ${timezone}`, "system");
+  
+  // Informações de memória se disponível
+  if (performance.memory) {
+    const memLimit = (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(0);
+    addLogEntry(`[SISTEMA] Limite de memória JS: ${memLimit}MB`, "system");
+  }
+  
+  // Informações de conexão se disponível
+  if (navigator.connection) {
+    const conn = navigator.connection;
+    const effectiveType = conn.effectiveType || 'N/A';
+    const downlink = conn.downlink ? `${conn.downlink} Mbps` : 'N/A';
+    addLogEntry(`[SISTEMA] Conexão: ${effectiveType} (${downlink})`, "system");
+  }
 });

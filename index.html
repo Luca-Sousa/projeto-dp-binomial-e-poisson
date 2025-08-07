@@ -23,31 +23,24 @@
                     </div>
                     <div class="control-group">
                         <label>Limite de Tempo (ms)</label>
-                        <input type="number" id="timeLimit" value="150" min="50" max="500" step="10">
+                        <input type="number" id="timeLimit" value="10" min="5" max="50" step="1">
+                        <small style="color: #ccc; font-size: 0.8em;">Tempo limite para cada teste de performance</small>
                     </div>
-                    <div class="control-group">
-                        <label>Nível de Dificuldade</label>
-                        <select id="difficultyLevel">
-                            <option value="easy">Fácil (PC potente)</option>
-                            <option value="medium" selected>Médio (balanceado)</option>
-                            <option value="hard">Difícil (stress test)</option>
-                        </select>
-                    </div>
-                    <button onclick="runPerformanceTests()" id="testButton">🚀 Executar Testes</button>
+                    <button onclick="runPerformanceTests()" id="testButton">🚀 Medir Performance Real</button>
                 </div>
                 
                 <div class="real-time-data">
                     <div class="data-item good" id="successTests">
                         <div class="value" id="successValue">0</div>
-                        <div class="label">Testes Aprovados</div>
+                        <div class="label">Testes Rápidos</div>
                     </div>
                     <div class="data-item critical" id="failedTests">
                         <div class="value" id="failedValue">0</div>
-                        <div class="label">Testes Reprovados</div>
+                        <div class="label">Testes Lentos</div>
                     </div>
                     <div class="data-item" id="successRate">
                         <div class="value" id="rateValue">0%</div>
-                        <div class="label">Taxa de Sucesso</div>
+                        <div class="label">Performance Real</div>
                     </div>
                 </div>
                 
@@ -116,7 +109,7 @@
                         <span class="status-indicator status-online"></span>
                         Carregando...
                     </div>
-                    <div class="label">Uso de Memória</div>
+                    <div class="label">Memória RAM</div>
                 </div>
                 <div class="data-item good" id="connectionSpeed">
                     <div class="value" id="speedValue">
@@ -128,16 +121,16 @@
                 <div class="data-item good" id="screenInfo">
                     <div class="value" id="screenValue">
                         <span class="status-indicator status-online"></span>
-                        ${window.screen.width}x${window.screen.height}
+                        Medindo...
                     </div>
-                    <div class="label">Resolução da Tela</div>
+                    <div class="label">Tela e FPS</div>
                 </div>
                 <div class="data-item good" id="browserInfo">
                     <div class="value" id="browserValue">
                         <span class="status-indicator status-online"></span>
-                        ${navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Outro'}
+                        Detectando...
                     </div>
-                    <div class="label">Navegador</div>
+                    <div class="label">Navegador e CPU</div>
                 </div>
             </div>
         </div>
