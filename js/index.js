@@ -176,7 +176,16 @@ async function runPerformanceTests() {
                 n = ${numTests} testes, k = ${k} sucessos<br>
                 p = ${observedP.toFixed(3)} (taxa real observada)<br>
                 P(X = ${k}) = ${(theoreticalProb * 100).toFixed(6)}%<br>
-                Performance Real: ${(observedP * 100).toFixed(1)}% dos testes foram rápidos
+                Performance Real: ${(observedP * 100).toFixed(1)}% dos testes foram rápidos<br>
+                <br>
+                <small style="opacity: 0.7; font-size: 0.85em;">
+                <strong>Onde:</strong><br>
+                • n = número total de tentativas (testes)<br>
+                • k = número de sucessos observados<br>
+                • p = probabilidade de sucesso em cada tentativa<br>
+                • C(n,k) = combinação de n elementos tomados k a k<br>
+                • X = variável aleatória (nº de sucessos)
+                </small>
             `;
   } else {
     // Para casos onde a probabilidade é muito pequena
@@ -186,7 +195,16 @@ async function runPerformanceTests() {
                 p = ${observedP.toFixed(3)} (taxa real observada)<br>
                 P(X = ${k}) ≈ ${theoreticalProb < 1e-10 ? 'muito pequena' : 'calculando...'}<br>
                 Performance Real: ${(observedP * 100).toFixed(1)}% dos testes foram rápidos<br>
-                <small style="opacity: 0.7">Nota: Para n=${numTests}, a probabilidade exata é muito pequena para exibir</small>
+                <small style="opacity: 0.7">Nota: Para n=${numTests}, a probabilidade exata é muito pequena para exibir</small><br>
+                <br>
+                <small style="opacity: 0.7; font-size: 0.85em;">
+                <strong>Onde:</strong><br>
+                • n = número total de tentativas (testes)<br>
+                • k = número de sucessos observados<br>
+                • p = probabilidade de sucesso em cada tentativa<br>
+                • C(n,k) = combinação de n elementos tomados k a k<br>
+                • X = variável aleatória (nº de sucessos)
+                </small>
             `;
   }
   
@@ -255,7 +273,15 @@ function startEventMonitoring() {
       const calcText = `
                         λ = ${lambda.toFixed(2)}, k = ${currentCount}<br>
                         P(X = ${currentCount}) = ${(prob * 100).toFixed(4)}%<br>
-                        Intervalo atual: ${eventCounts.length}
+                        Intervalo atual: ${eventCounts.length}<br>
+                        <br>
+                        <small style="opacity: 0.7; font-size: 0.85em;">
+                        <strong>Onde:</strong><br>
+                        • λ (lambda) = taxa média de eventos por intervalo<br>
+                        • k = número específico de eventos observados<br>
+                        • e ≈ 2.718 (constante matemática de Euler)<br>
+                        • X = variável aleatória (nº de eventos)
+                        </small>
                     `;
       document.getElementById("poissonResult").innerHTML = calcText;
     }
